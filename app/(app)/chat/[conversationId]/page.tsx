@@ -65,7 +65,11 @@ export default function ConversationPage() {
           }),
         });
 
-        if (!response.ok) throw new Error("Chat request failed");
+        if (!response.ok) {
+          const errorBody = await response.text();
+          console.error("[chat] API error:", response.status, errorBody);
+          throw new Error(`Chat request failed (${response.status}): ${errorBody}`);
+        }
 
         const reader = response.body?.getReader();
         if (!reader) throw new Error("No response body");
@@ -78,21 +82,10 @@ export default function ConversationPage() {
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-
-          for (const line of lines) {
-            if (line.startsWith("0:")) {
-              const text = line.slice(2);
-              try {
-                const parsed = JSON.parse(text);
-                fullContent += parsed;
-                setStreamingContent(fullContent);
-                setThinkingStatus(undefined);
-              } catch {
-                fullContent += text;
-                setStreamingContent(fullContent);
-              }
-            }
+          fullContent += chunk;
+          setStreamingContent(fullContent);
+          if (chunk.length > 0) {
+            setThinkingStatus(undefined);
           }
         }
 

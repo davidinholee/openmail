@@ -11,66 +11,90 @@ import { DRAFT_SYSTEM_PROMPT } from "@/lib/ai/draft-agent";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.accessToken || !session?.user?.id) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  const { conversationId, messages } = await req.json();
-
-  const lastUserMessage = messages[messages.length - 1]?.content || "";
-  const isDrafting =
-    /\b(draft|compose|write|send)\b.*\b(email|message|reply)\b/i.test(
-      lastUserMessage
-    ) ||
-    /\b(email|message|reply)\b.*\b(to|for|about)\b/i.test(lastUserMessage);
-
-  const systemPrompt = isDrafting
-    ? DRAFT_SYSTEM_PROMPT
-    : SEARCH_SYSTEM_PROMPT;
-
-  const tools = isDrafting
-    ? createDraftTools(session.accessToken)
-    : createSearchTools(session.accessToken, session.user.id);
-
-  if (conversationId) {
-    await db.insert(messagesTable).values({
-      conversationId,
-      role: "user",
-      content: lastUserMessage,
-    });
-
-    if (messages.length <= 1) {
-      const title =
-        lastUserMessage.slice(0, 80) + (lastUserMessage.length > 80 ? "..." : "");
-      await db
-        .update(conversations)
-        .set({ title, updatedAt: new Date() })
-        .where(eq(conversations.id, conversationId));
+  try {
+    const session = await auth();
+    if (!session?.accessToken || !session?.user?.id) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized — please sign in again" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
     }
-  }
 
-  const result = streamText({
-    model: openai("gpt-4.1"),
-    system: systemPrompt,
-    messages,
-    tools,
-    stopWhen: stepCountIs(4),
-    onFinish: async ({ text }) => {
-      if (conversationId && text) {
+    const { conversationId, messages } = await req.json();
+
+    const lastUserMessage = messages[messages.length - 1]?.content || "";
+    const isDrafting =
+      /\b(draft|compose|write|send)\b.*\b(email|message|reply)\b/i.test(
+        lastUserMessage
+      ) ||
+      /\b(email|message|reply)\b.*\b(to|for|about)\b/i.test(lastUserMessage);
+
+    const systemPrompt = isDrafting
+      ? DRAFT_SYSTEM_PROMPT
+      : SEARCH_SYSTEM_PROMPT;
+
+    const tools = isDrafting
+      ? createDraftTools(session.accessToken)
+      : createSearchTools(session.accessToken, session.user.id);
+
+    if (conversationId) {
+      try {
         await db.insert(messagesTable).values({
           conversationId,
-          role: "assistant",
-          content: text,
+          role: "user",
+          content: lastUserMessage,
         });
 
-        await db
-          .update(conversations)
-          .set({ updatedAt: new Date() })
-          .where(eq(conversations.id, conversationId));
+        if (messages.length <= 1) {
+          const title =
+            lastUserMessage.slice(0, 80) +
+            (lastUserMessage.length > 80 ? "..." : "");
+          await db
+            .update(conversations)
+            .set({ title, updatedAt: new Date() })
+            .where(eq(conversations.id, conversationId));
+        }
+      } catch (dbError) {
+        console.error("[chat] DB error persisting user message:", dbError);
       }
-    },
-  });
+    }
 
-  return result.toTextStreamResponse();
+    console.log("[chat] Calling OpenAI with model gpt-4.1, isDrafting:", isDrafting);
+
+    const result = streamText({
+      model: openai("gpt-4.1"),
+      system: systemPrompt,
+      messages,
+      tools,
+      stopWhen: stepCountIs(4),
+      onFinish: async ({ text }) => {
+        console.log("[chat] Stream finished, text length:", text?.length || 0);
+        if (conversationId && text) {
+          try {
+            await db.insert(messagesTable).values({
+              conversationId,
+              role: "assistant",
+              content: text,
+            });
+            await db
+              .update(conversations)
+              .set({ updatedAt: new Date() })
+              .where(eq(conversations.id, conversationId));
+          } catch (dbError) {
+            console.error("[chat] DB error persisting assistant message:", dbError);
+          }
+        }
+      },
+    });
+
+    return result.toTextStreamResponse();
+  } catch (error) {
+    console.error("[chat] Unhandled error:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Internal server error",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
