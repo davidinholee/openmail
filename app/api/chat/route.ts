@@ -60,15 +60,58 @@ export async function POST(req: Request) {
     }
 
     console.log("[chat] Calling OpenAI with model gpt-4.1, isDrafting:", isDrafting);
+    console.log("[chat] User message:", lastUserMessage.slice(0, 200));
+
+    let stepCount = 0;
+    let totalTokens = 0;
 
     const result = streamText({
       model: openai("gpt-4.1"),
       system: systemPrompt,
       messages,
       tools,
-      stopWhen: stepCountIs(4),
+      stopWhen: stepCountIs(12),
+      onChunk: ({ chunk }) => {
+        if (chunk.type === "text-delta" && chunk.textDelta) {
+          process.stdout.write(chunk.textDelta);
+        }
+      },
+      onError: ({ error }) => {
+        console.error("[chat] Stream error:", error);
+      },
+      onStepFinish: ({ stepType, finishReason, text, toolCalls, toolResults, usage }) => {
+        stepCount++;
+        const stepTokens = usage?.totalTokens || 0;
+        totalTokens += stepTokens;
+
+        console.log("\n[chat] ─── Step", stepCount, "───");
+        console.log("[chat]   type:", stepType, "| finishReason:", finishReason, "| tokens:", stepTokens);
+
+        if (toolCalls && toolCalls.length > 0) {
+          for (const tc of toolCalls) {
+            console.log("[chat]   tool call:", tc.toolName, JSON.stringify(tc.args).slice(0, 300));
+          }
+        }
+
+        if (toolResults && toolResults.length > 0) {
+          for (const tr of toolResults) {
+            const resultStr = JSON.stringify(tr.result);
+            console.log(
+              "[chat]   tool result:", tr.toolName,
+              "→", resultStr.slice(0, 500) + (resultStr.length > 500 ? "..." : "")
+            );
+          }
+        }
+
+        if (text) {
+          console.log("[chat]   text:", text.slice(0, 200) + (text.length > 200 ? "..." : ""));
+        }
+      },
       onFinish: async ({ text }) => {
-        console.log("[chat] Stream finished, text length:", text?.length || 0);
+        console.log("\n[chat] ═══ Finished ═══");
+        console.log("[chat]   total steps:", stepCount, "| total tokens:", totalTokens);
+        console.log("[chat]   final text length:", text?.length || 0);
+
         if (conversationId && text) {
           try {
             await db.insert(messagesTable).values({

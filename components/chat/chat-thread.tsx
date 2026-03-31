@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "./message-bubble";
 import { ThinkingIndicator } from "./thinking-indicator";
 import type { ChatMessage } from "@/types/chat";
@@ -70,7 +69,7 @@ export function ChatThread({
   }
 
   return (
-    <ScrollArea className="flex-1">
+    <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-6 pb-6 pt-4">
         {messages.map((msg) => (
           <MessageBubble
@@ -99,6 +98,6 @@ export function ChatThread({
 
         <div ref={bottomRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

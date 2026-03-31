@@ -155,32 +155,40 @@ export async function getMessage(
   return parseMessage(res.data);
 }
 
+export interface SearchResult {
+  messageId: string;
+  threadId: string;
+  subject: string;
+  sender: string;
+  date: string;
+  snippet: string;
+  labelIds: string[];
+}
+
+export interface SearchResponse {
+  results: SearchResult[];
+  resultSizeEstimate: number;
+  nextPageToken?: string;
+}
+
 export async function searchMessages(
   accessToken: string,
   query: string,
-  maxResults = 10
-): Promise<
-  {
-    messageId: string;
-    threadId: string;
-    subject: string;
-    sender: string;
-    date: string;
-    snippet: string;
-    labelIds: string[];
-  }[]
-> {
+  maxResults = 20,
+  pageToken?: string
+): Promise<SearchResponse> {
   const gmail = getGmailClient(accessToken);
 
   const res = await gmail.users.messages.list({
     userId: "me",
     q: query,
     maxResults,
+    pageToken,
   });
 
   const messageIds = res.data.messages || [];
 
-  return Promise.all(
+  const results = await Promise.all(
     messageIds.map(async (m) => {
       const msg = await gmail.users.messages.get({
         userId: "me",
@@ -205,6 +213,35 @@ export async function searchMessages(
       };
     })
   );
+
+  return {
+    results,
+    resultSizeEstimate: res.data.resultSizeEstimate || 0,
+    nextPageToken: res.data.nextPageToken || undefined,
+  };
+}
+
+export async function getMailboxInfo(
+  accessToken: string,
+  labelIds: string[] = ["INBOX"]
+): Promise<{ label: string; total: number; unread: number }[]> {
+  const gmail = getGmailClient(accessToken);
+
+  const info = await Promise.all(
+    labelIds.map(async (labelId) => {
+      const res = await gmail.users.labels.get({
+        userId: "me",
+        id: labelId,
+      });
+      return {
+        label: res.data.name || labelId,
+        total: res.data.messagesTotal || 0,
+        unread: res.data.messagesUnread || 0,
+      };
+    })
+  );
+
+  return info;
 }
 
 export async function createDraft(

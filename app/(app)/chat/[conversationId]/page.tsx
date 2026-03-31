@@ -120,7 +120,7 @@ export default function ConversationPage() {
   );
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-h-0">
       <ChatSidebar
         conversations={conversations}
         activeId={conversationId}
@@ -132,7 +132,7 @@ export default function ConversationPage() {
         }}
       />
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-h-0 min-w-0">
         <ChatThread
           messages={messages}
           streamingContent={streamingContent}

@@ -15,7 +15,7 @@ export async function POST() {
   }
 
   try {
-    const results = await searchMessages(
+    const { results } = await searchMessages(
       session.accessToken,
       "newer_than:30d",
       100

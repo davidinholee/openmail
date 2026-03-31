@@ -7,6 +7,7 @@ import {
   primaryKey,
   uuid,
   jsonb,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ─── NextAuth Tables ─────────────────────────────────────────────────────────
@@ -89,19 +90,25 @@ export const messages = pgTable("message", {
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 
-export const emailSummaries = pgTable("email_summary", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  messageId: text("messageId").notNull(),
-  threadId: text("threadId"),
-  subject: text("subject"),
-  sender: text("sender"),
-  recipients: text("recipients"),
-  date: timestamp("date", { mode: "date" }),
-  summary: text("summary"),
-  labels: text("labels").array(),
-  hasAttachments: boolean("hasAttachments").default(false),
-  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-});
+export const emailSummaries = pgTable(
+  "email_summary",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    messageId: text("messageId").notNull(),
+    threadId: text("threadId"),
+    subject: text("subject"),
+    sender: text("sender"),
+    recipients: text("recipients"),
+    date: timestamp("date", { mode: "date" }),
+    summary: text("summary"),
+    labels: text("labels").array(),
+    hasAttachments: boolean("hasAttachments").default(false),
+    createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("email_summary_user_message_idx").on(table.userId, table.messageId),
+  ]
+);

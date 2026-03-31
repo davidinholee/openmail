@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { Mail, ChevronRight } from "lucide-react";
 import type { Citation } from "@/types/email";
 
 interface EmailCitationProps {
@@ -9,40 +9,26 @@ interface EmailCitationProps {
 }
 
 export function EmailCitation({ citation, onClick }: EmailCitationProps) {
-  const gmailUrl = `https://mail.google.com/mail/u/0/#inbox/${citation.threadId}`;
-
   return (
-    <div
-      className="flex items-start gap-3 rounded-xl border border-border p-3.5 hover:bg-secondary/50 transition-all duration-150 cursor-pointer group"
+    <button
       onClick={onClick}
+      className="flex items-center gap-3 w-full rounded-lg border border-border/60 bg-secondary/30 px-3.5 py-2.5 text-left hover:bg-secondary/60 hover:border-border transition-all duration-150 group"
     >
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-foreground text-background text-[10px] font-semibold mt-0.5">
-        {citation.index}
-      </span>
-
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <p className="text-[13px] font-medium truncate">
-          {citation.subject}
-        </p>
-        <p className="text-[11px] text-muted-foreground">
-          {citation.sender} · {citation.date}
-        </p>
-        {citation.snippet && (
-          <p className="text-[11px] text-muted-foreground/60 truncate mt-1">
-            {citation.snippet}
-          </p>
-        )}
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-foreground/10 text-foreground">
+        <Mail className="h-3.5 w-3.5" />
       </div>
 
-      <a
-        href={gmailUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
-      >
-        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-      </a>
-    </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-medium truncate leading-snug">
+          <span className="text-muted-foreground/70 mr-1">[{citation.index}]</span>
+          {citation.subject}
+        </p>
+        <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+          {citation.sender} · {citation.date}
+        </p>
+      </div>
+
+      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+    </button>
   );
 }
