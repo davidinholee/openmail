@@ -38,23 +38,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       )}
     >
       <div className="flex h-16 items-center justify-between px-4">
-        {!collapsed ? (
-          <div className="flex items-center gap-2">
-            <img
-              src="/openmail-logo.png"
-              alt="OpenMail"
-              className="h-6 w-6 object-contain"
-            />
-            <span className="text-[15px] font-semibold tracking-tight">
-              OpenMail
-            </span>
-          </div>
-        ) : (
-          <img
-            src="/openmail-logo.png"
-            alt="OpenMail"
-            className="h-6 w-6 object-contain mx-auto"
-          />
+        {!collapsed && (
+          <span className="text-[15px] font-semibold tracking-tight">
+            OpenMail
+          </span>
         )}
         <button
           onClick={onToggle}

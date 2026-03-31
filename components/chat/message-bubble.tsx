@@ -73,21 +73,13 @@ export function MessageBubble({
   return (
     <div className="py-5">
       <div className={cn("flex gap-4", isUser ? "flex-row-reverse" : "flex-row")}>
-        {isUser ? (
+        {isUser && (
           <Avatar className="h-9 w-9 shrink-0 mt-0.5">
             <AvatarImage src={userImage} />
             <AvatarFallback className="text-[10px] font-medium bg-foreground text-background">
               Y
             </AvatarFallback>
           </Avatar>
-        ) : (
-          <div className="h-9 w-9 shrink-0 mt-0.5 rounded-full bg-white shadow-sm border border-border/50 overflow-hidden">
-            <img
-              src="/openmail-logo.png"
-              alt="OpenMail"
-              className="h-full w-full object-cover scale-[0.85]"
-            />
-          </div>
         )}
 
         <div className={cn("flex-1 min-w-0 space-y-3", isUser && "text-right")}>

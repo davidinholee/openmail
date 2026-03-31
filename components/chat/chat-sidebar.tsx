@@ -29,7 +29,8 @@ export function ChatSidebar({
         </span>
         <button
           onClick={onNew}
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-secondary/80 active:scale-95 transition-all duration-150"
+          title="New chat"
         >
           <Plus className="h-4 w-4" />
         </button>
