@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log("[chat] Calling OpenAI with model gpt-5.1, isDrafting:", isDrafting);
+    console.log("[chat] Calling OpenAI with model gpt-5.1");
     console.log("[chat] User message:", lastUserMessage.slice(0, 200));
 
     let stepCount = 0;
