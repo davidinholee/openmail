@@ -11,22 +11,23 @@ import type { Citation, EmailDraft } from "@/types/email";
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
+  messageId?: string;
   citations?: Citation[];
   draft?: EmailDraft;
   userImage?: string;
-  onSaveDraft?: (draft: EmailDraft) => void;
+  onRegenerate?: () => void;
   onCitationClick?: (citation: Citation) => void;
 }
 
 function parseDraft(content: string): { text: string; draft: EmailDraft | null } {
   const draftMatch = content.match(
-    /---DRAFT---\s*\nTO:\s*(.+)\nSUBJECT:\s*(.+)\nBODY:\s*\n([\s\S]*?)---END DRAFT---/
+    /---\s*DRAFT\s*---\s*\n?\s*TO:\s*(.+)\n\s*SUBJECT:\s*(.+)\n(?:\s*REPLY_TO:\s*(.+)\n)?\s*BODY:\s*\n([\s\S]*?)\s*---\s*END\s*DRAFT\s*---/
   );
 
   if (!draftMatch) return { text: content, draft: null };
 
   const text = content.replace(
-    /---DRAFT---[\s\S]*?---END DRAFT---/,
+    /---\s*DRAFT\s*---[\s\S]*?---\s*END\s*DRAFT\s*---/,
     ""
   ).trim();
 
@@ -35,7 +36,8 @@ function parseDraft(content: string): { text: string; draft: EmailDraft | null }
     draft: {
       to: draftMatch[1].trim(),
       subject: draftMatch[2].trim(),
-      body: draftMatch[3].trim(),
+      body: draftMatch[4].trim(),
+      replyToThreadId: draftMatch[3]?.trim() || undefined,
     },
   };
 }
@@ -43,10 +45,11 @@ function parseDraft(content: string): { text: string; draft: EmailDraft | null }
 export function MessageBubble({
   role,
   content,
+  messageId,
   citations: existingCitations,
   draft: existingDraft,
   userImage,
-  onSaveDraft,
+  onRegenerate,
   onCitationClick,
 }: MessageBubbleProps) {
   const isUser = role === "user";
@@ -71,15 +74,19 @@ export function MessageBubble({
     <div className="py-5">
       <div className={cn("flex gap-4", isUser ? "flex-row-reverse" : "flex-row")}>
         {isUser ? (
-          <Avatar className="h-7 w-7 shrink-0 mt-0.5">
+          <Avatar className="h-9 w-9 shrink-0 mt-0.5">
             <AvatarImage src={userImage} />
             <AvatarFallback className="text-[10px] font-medium bg-foreground text-background">
               Y
             </AvatarFallback>
           </Avatar>
         ) : (
-          <div className="h-7 w-7 shrink-0 mt-0.5 rounded-full bg-foreground flex items-center justify-center">
-            <span className="text-[11px] font-bold text-background">O</span>
+          <div className="h-9 w-9 shrink-0 mt-0.5 rounded-full bg-white shadow-sm border border-border/50 overflow-hidden">
+            <img
+              src="/openmail-logo.png"
+              alt="OpenMail"
+              className="h-full w-full object-cover scale-[0.85]"
+            />
           </div>
         )}
 
@@ -144,7 +151,9 @@ export function MessageBubble({
             <div className="max-w-full">
               <DraftPreview
                 draft={draft}
-                onSave={() => onSaveDraft?.(draft!)}
+                messageId={messageId}
+                initialSent={existingDraft?.sent}
+                onRegenerate={onRegenerate}
               />
             </div>
           )}

@@ -1,11 +1,12 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { searchMessages, getMessage, createDraft, getMailboxInfo } from "@/lib/gmail";
+import { searchMessages, getMessage, createDraft, getMailboxInfo, sendEmail, getThreadMessageIds } from "@/lib/gmail";
+import { getOrCreateSummary } from "./summarizer";
 import { db } from "@/lib/db";
-import { cachedThreads } from "@/lib/db/schema";
+import { cachedThreads, drafts } from "@/lib/db/schema";
 import { eq, and, or, ilike, desc } from "drizzle-orm";
 
-export function createSearchTools(accessToken: string, userId: string) {
+export function createAllTools(accessToken: string, userId: string) {
   return {
     get_mailbox_info: tool({
       description:
@@ -113,35 +114,99 @@ export function createSearchTools(accessToken: string, userId: string) {
         messageId: z.string().describe("The Gmail message ID to fetch"),
       }),
       execute: async ({ messageId }) => {
-        const email = await getMessage(accessToken, messageId);
-        return {
-          messageId: email.id,
-          threadId: email.threadId,
-          subject: email.subject,
-          sender: `${email.from.name} <${email.from.email}>`,
-          recipients: email.to.map((a) => `${a.name} <${a.email}>`).join(", "),
-          date: email.date,
-          body: email.body.slice(0, 4000),
-        };
+        try {
+          const email = await getMessage(accessToken, messageId);
+          return {
+            messageId: email.id,
+            threadId: email.threadId,
+            subject: email.subject,
+            sender: `${email.from.name} <${email.from.email}>`,
+            recipients: email.to.map((a) => `${a.name} <${a.email}>`).join(", "),
+            date: email.date,
+            body: email.body.slice(0, 4000),
+          };
+        } catch (err) {
+          console.error("[get_email_detail] Failed for messageId:", messageId, err);
+          return { error: `Failed to retrieve email ${messageId}. It may have been deleted or moved. Try searching again with different terms.` };
+        }
       },
     }),
-  };
-}
 
-export function createDraftTools(accessToken: string) {
-  return {
     save_draft: tool({
       description:
-        "Save an email draft to the user's Gmail account. " +
-        "Only call this when the user explicitly confirms they want to save the draft.",
+        "Save an email draft to the user's drafts. " +
+        "Only call this when the user explicitly approves the draft (e.g., 'save it', 'looks good', 'yes'). " +
+        "Returns a draftId that the user can edit later in the Drafts tab.",
       inputSchema: z.object({
         to: z.string().describe("Recipient email address"),
         subject: z.string().describe("Email subject line"),
         body: z.string().describe("Email body text"),
+        replyToThreadId: z.string().optional().describe("Gmail thread ID if this is a reply"),
       }),
-      execute: async ({ to, subject, body }) => {
-        const draftId = await createDraft(accessToken, to, subject, body);
-        return { success: true, draftId };
+      execute: async ({ to, subject, body, replyToThreadId }) => {
+        const [draft] = await db
+          .insert(drafts)
+          .values({ userId, to, subject, body, replyToThreadId: replyToThreadId || null })
+          .returning({ id: drafts.id });
+        return { success: true, draftId: draft.id };
+      },
+    }),
+
+    send_email: tool({
+      description:
+        "Send an email immediately via the user's Gmail account. " +
+        "Only call this when the user explicitly asks to send (e.g., 'send it', 'send now'). " +
+        "If replyToThreadId is provided, the email is sent as a reply within that thread.",
+      inputSchema: z.object({
+        to: z.string().describe("Recipient email address"),
+        subject: z.string().describe("Email subject line"),
+        body: z.string().describe("Email body text"),
+        cc: z.string().optional().describe("CC recipients"),
+        bcc: z.string().optional().describe("BCC recipients"),
+        replyToThreadId: z.string().optional().describe("Gmail thread ID if this is a reply"),
+      }),
+      execute: async ({ to, subject, body, cc, bcc, replyToThreadId }) => {
+        if (/^Re:/i.test(subject) && !replyToThreadId) {
+          return { success: false, error: "This looks like a reply (subject starts with 'Re:') but no replyToThreadId was provided. You must include replyToThreadId when sending replies." };
+        }
+
+        let threadId: string | undefined;
+        let inReplyTo: string | undefined;
+        let references: string | undefined;
+
+        if (replyToThreadId) {
+          threadId = replyToThreadId;
+        }
+
+        if (threadId) {
+          try {
+            const threadMsgs = await getThreadMessageIds(accessToken, threadId);
+            if (threadMsgs.length > 0) {
+              const lastMsg = threadMsgs[threadMsgs.length - 1];
+              inReplyTo = lastMsg.headerMessageId;
+              references = threadMsgs.map((m) => m.headerMessageId).filter(Boolean).join(" ");
+            }
+          } catch (e) {
+            console.error("[send_email] Failed to fetch thread headers:", e);
+          }
+        }
+
+        const gmailMessageId = await sendEmail(
+          accessToken, to, subject, body, cc, bcc,
+          threadId, inReplyTo, references
+        );
+        await db.insert(drafts).values({
+          userId,
+          to,
+          subject,
+          body,
+          cc,
+          bcc,
+          replyToThreadId: replyToThreadId || null,
+          status: "sent",
+          sentAt: new Date(),
+        });
+        return { success: true, gmailMessageId };
       },
     }),
   };

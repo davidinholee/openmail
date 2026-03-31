@@ -276,6 +276,72 @@ export async function createDraft(
   return res.data.id!;
 }
 
+export async function sendEmail(
+  accessToken: string,
+  to: string,
+  subject: string,
+  body: string,
+  cc?: string,
+  bcc?: string,
+  threadId?: string,
+  inReplyTo?: string,
+  references?: string
+): Promise<string> {
+  const gmail = getGmailClient(accessToken);
+
+  const headers = [
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    "Content-Type: text/plain; charset=utf-8",
+  ];
+  if (cc) headers.splice(1, 0, `Cc: ${cc}`);
+  if (bcc) headers.splice(1, 0, `Bcc: ${bcc}`);
+  if (inReplyTo) headers.push(`In-Reply-To: ${inReplyTo}`);
+  if (references) headers.push(`References: ${references}`);
+
+  const rawMessage = [...headers, "", body].join("\r\n");
+
+  const encodedMessage = Buffer.from(rawMessage)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  const res = await gmail.users.messages.send({
+    userId: "me",
+    requestBody: {
+      raw: encodedMessage,
+      threadId: threadId || undefined,
+    },
+  });
+
+  return res.data.id!;
+}
+
+export async function getThreadMessageIds(
+  accessToken: string,
+  threadId: string
+): Promise<{ messageId: string; headerMessageId: string }[]> {
+  const gmail = getGmailClient(accessToken);
+
+  const thread = await gmail.users.threads.get({
+    userId: "me",
+    id: threadId,
+    format: "metadata",
+    metadataHeaders: ["Message-ID"],
+  });
+
+  return (thread.data.messages || []).map((msg) => {
+    const msgIdHeader = (msg.payload?.headers || []).find(
+      (h) => h.name?.toLowerCase() === "message-id"
+    );
+    return {
+      messageId: msg.id!,
+      headerMessageId: msgIdHeader?.value || "",
+    };
+  });
+}
+
 export async function modifyMessage(
   accessToken: string,
   messageId: string,

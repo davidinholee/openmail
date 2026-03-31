@@ -11,9 +11,8 @@ import {
   useConversationMessages,
   useDeleteConversation,
 } from "@/hooks/use-conversations";
-import { useSaveDraft } from "@/hooks/use-gmail-actions";
 import type { ChatMessage } from "@/types/chat";
-import type { Citation, EmailDraft } from "@/types/email";
+import type { Citation } from "@/types/email";
 
 export default function ConversationPage() {
   const params = useParams();
@@ -24,7 +23,6 @@ export default function ConversationPage() {
   const { data: conversations = [] } = useConversations();
   const { data: savedMessages } = useConversationMessages(conversationId);
   const deleteConversation = useDeleteConversation();
-  const saveDraft = useSaveDraft();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingContent, setStreamingContent] = useState("");
@@ -139,7 +137,7 @@ export default function ConversationPage() {
           isLoading={isLoading}
           thinkingStatus={thinkingStatus}
           userImage={session?.user?.image || undefined}
-          onSaveDraft={(draft: EmailDraft) => saveDraft.mutate(draft)}
+          onRegenerate={() => handleSend("Please regenerate the draft with a different approach.")}
           onCitationClick={(citation: Citation) =>
             router.push(`/inbox/${citation.threadId}`)
           }

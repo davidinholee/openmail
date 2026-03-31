@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Inbox,
   Star,
+  FileEdit,
   Settings,
   ChevronsLeft,
   ChevronsRight,
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/chat", label: "Chat", icon: MessageSquare },
   { href: "/priority", label: "Priority", icon: Star },
   { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/drafts", label: "Drafts", icon: FileEdit },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -36,10 +38,23 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       )}
     >
       <div className="flex h-16 items-center justify-between px-4">
-        {!collapsed && (
-          <span className="text-[15px] font-semibold tracking-tight">
-            OpenMail
-          </span>
+        {!collapsed ? (
+          <div className="flex items-center gap-2">
+            <img
+              src="/openmail-logo.png"
+              alt="OpenMail"
+              className="h-6 w-6 object-contain"
+            />
+            <span className="text-[15px] font-semibold tracking-tight">
+              OpenMail
+            </span>
+          </div>
+        ) : (
+          <img
+            src="/openmail-logo.png"
+            alt="OpenMail"
+            className="h-6 w-6 object-contain mx-auto"
+          />
         )}
         <button
           onClick={onToggle}

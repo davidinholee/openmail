@@ -91,4 +91,7 @@ export interface EmailDraft {
   to: string;
   subject: string;
   body: string;
+  replyToThreadId?: string;
+  sent?: boolean;
+  draftId?: string;
 }

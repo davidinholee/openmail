@@ -108,6 +108,25 @@ export const syncState = pgTable("sync_state", {
   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
 });
 
+export const drafts = pgTable("draft", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  to: text("to").notNull().default(""),
+  cc: text("cc"),
+  bcc: text("bcc"),
+  subject: text("subject").notNull().default(""),
+  body: text("body").notNull().default(""),
+  replyToThreadId: text("replyToThreadId"),
+  status: text("status", { enum: ["draft", "sent"] })
+    .notNull()
+    .default("draft"),
+  sentAt: timestamp("sentAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+});
+
 export const cachedThreads = pgTable(
   "cached_thread",
   {

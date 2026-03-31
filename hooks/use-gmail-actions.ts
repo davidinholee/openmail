@@ -29,19 +29,24 @@ export function useGmailModify() {
 }
 
 export function useSaveDraft() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (draft: {
       to: string;
       subject: string;
       body: string;
     }) => {
-      const res = await fetch("/api/gmail/draft", {
+      const res = await fetch("/api/drafts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft),
       });
       if (!res.ok) throw new Error("Failed to save draft");
       return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["drafts"] });
     },
   });
 }

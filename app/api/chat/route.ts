@@ -4,9 +4,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { messages as messagesTable, conversations } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { createSearchTools, createDraftTools } from "@/lib/ai/tools";
-import { SEARCH_SYSTEM_PROMPT } from "@/lib/ai/search-agent";
-import { DRAFT_SYSTEM_PROMPT } from "@/lib/ai/draft-agent";
+import { createAllTools } from "@/lib/ai/tools";
+import { buildSystemPrompt } from "@/lib/ai/search-agent";
 
 export const maxDuration = 60;
 
@@ -23,19 +22,12 @@ export async function POST(req: Request) {
     const { conversationId, messages } = await req.json();
 
     const lastUserMessage = messages[messages.length - 1]?.content || "";
-    const isDrafting =
-      /\b(draft|compose|write|send)\b.*\b(email|message|reply)\b/i.test(
-        lastUserMessage
-      ) ||
-      /\b(email|message|reply)\b.*\b(to|for|about)\b/i.test(lastUserMessage);
 
-    const systemPrompt = isDrafting
-      ? DRAFT_SYSTEM_PROMPT
-      : SEARCH_SYSTEM_PROMPT;
-
-    const tools = isDrafting
-      ? createDraftTools(session.accessToken)
-      : createSearchTools(session.accessToken, session.user.id);
+    const tools = createAllTools(session.accessToken, session.user.id);
+    const systemPrompt = buildSystemPrompt({
+      name: session.user.name,
+      email: session.user.email,
+    });
 
     if (conversationId) {
       try {
@@ -88,17 +80,17 @@ export async function POST(req: Request) {
         console.log("\n[chat] ─── Step", stepCount, "───");
         console.log("[chat]   finishReason:", e.finishReason, "| tokens:", stepTokens);
 
-        const toolCalls = e.toolCalls as { toolName: string; args: unknown }[] | undefined;
+        const toolCalls = e.toolCalls as { toolName: string; input: unknown }[] | undefined;
         if (toolCalls && toolCalls.length > 0) {
           for (const tc of toolCalls) {
-            console.log("[chat]   tool call:", tc.toolName, JSON.stringify(tc.args).slice(0, 300));
+            console.log("[chat]   tool call:", tc.toolName, JSON.stringify(tc.input).slice(0, 300));
           }
         }
 
-        const toolResults = e.toolResults as { toolName: string; result: unknown }[] | undefined;
+        const toolResults = e.toolResults as { toolName: string; output: unknown }[] | undefined;
         if (toolResults && toolResults.length > 0) {
           for (const tr of toolResults) {
-            const resultStr = JSON.stringify(tr.result);
+            const resultStr = JSON.stringify(tr.output);
             console.log(
               "[chat]   tool result:", tr.toolName,
               "→", resultStr.slice(0, 500) + (resultStr.length > 500 ? "..." : "")

@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { MessageBubble } from "./message-bubble";
 import { ThinkingIndicator } from "./thinking-indicator";
 import type { ChatMessage } from "@/types/chat";
-import type { Citation, EmailDraft } from "@/types/email";
+import type { Citation } from "@/types/email";
 
 interface ChatThreadProps {
   messages: ChatMessage[];
@@ -12,7 +12,7 @@ interface ChatThreadProps {
   isLoading: boolean;
   thinkingStatus?: string;
   userImage?: string;
-  onSaveDraft?: (draft: EmailDraft) => void;
+  onRegenerate?: () => void;
   onCitationClick?: (citation: Citation) => void;
   onSuggestionClick?: (text: string) => void;
 }
@@ -23,14 +23,18 @@ export function ChatThread({
   isLoading,
   thinkingStatus,
   userImage,
-  onSaveDraft,
+  onRegenerate,
   onCitationClick,
   onSuggestionClick,
 }: ChatThreadProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    }
   }, [messages, streamingContent]);
 
   if (messages.length === 0 && !isLoading) {
@@ -69,17 +73,18 @@ export function ChatThread({
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto">
+    <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-6 pb-6 pt-4">
         {messages.map((msg) => (
           <MessageBubble
             key={msg.id}
             role={msg.role}
             content={msg.content}
+            messageId={msg.id}
             citations={msg.citations}
             draft={msg.draft}
             userImage={userImage}
-            onSaveDraft={onSaveDraft}
+            onRegenerate={onRegenerate}
             onCitationClick={onCitationClick}
           />
         ))}
