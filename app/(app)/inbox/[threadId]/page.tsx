@@ -23,6 +23,7 @@ export default function ThreadPage() {
         if (lastMessageId) {
           modify.mutate({
             messageId: lastMessageId,
+            threadId,
             removeLabelIds: ["INBOX"],
           });
           router.push("/inbox");
@@ -32,6 +33,7 @@ export default function ThreadPage() {
         if (lastMessageId && thread) {
           modify.mutate({
             messageId: lastMessageId,
+            threadId,
             ...(thread.isStarred
               ? { removeLabelIds: ["STARRED"] }
               : { addLabelIds: ["STARRED"] }),
@@ -42,6 +44,7 @@ export default function ThreadPage() {
         if (lastMessageId && thread) {
           modify.mutate({
             messageId: lastMessageId,
+            threadId,
             ...(thread.isUnread
               ? { removeLabelIds: ["UNREAD"] }
               : { addLabelIds: ["UNREAD"] }),
@@ -52,6 +55,7 @@ export default function ThreadPage() {
         if (lastMessageId) {
           modify.mutate({
             messageId: lastMessageId,
+            threadId,
             addLabelIds: ["TRASH"],
           });
           router.push("/inbox");

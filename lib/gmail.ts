@@ -315,6 +315,102 @@ export async function listLabels(
   }));
 }
 
+// ─── Sync helpers ───────────────────────────────────────────────────────────
+
+export async function getProfile(
+  accessToken: string
+): Promise<{ emailAddress: string; historyId: string }> {
+  const gmail = getGmailClient(accessToken);
+  const res = await gmail.users.getProfile({ userId: "me" });
+  return {
+    emailAddress: res.data.emailAddress || "",
+    historyId: res.data.historyId || "",
+  };
+}
+
+export interface HistoryRecord {
+  messagesAdded: { messageId: string; threadId: string; labelIds: string[] }[];
+  messagesDeleted: { messageId: string; threadId: string }[];
+  labelsAdded: { messageId: string; threadId: string; labelIds: string[] }[];
+  labelsRemoved: { messageId: string; threadId: string; labelIds: string[] }[];
+}
+
+export async function listHistory(
+  accessToken: string,
+  startHistoryId: string
+): Promise<{ history: HistoryRecord; historyId: string }> {
+  const gmail = getGmailClient(accessToken);
+
+  const collected: HistoryRecord = {
+    messagesAdded: [],
+    messagesDeleted: [],
+    labelsAdded: [],
+    labelsRemoved: [],
+  };
+
+  let pageToken: string | undefined;
+  let newHistoryId = startHistoryId;
+
+  do {
+    const res = await gmail.users.history.list({
+      userId: "me",
+      startHistoryId,
+      historyTypes: [
+        "messageAdded",
+        "messageDeleted",
+        "labelAdded",
+        "labelRemoved",
+      ],
+      maxResults: 500,
+      pageToken,
+    });
+
+    newHistoryId = res.data.historyId || newHistoryId;
+
+    for (const h of res.data.history || []) {
+      for (const added of h.messagesAdded || []) {
+        if (added.message) {
+          collected.messagesAdded.push({
+            messageId: added.message.id!,
+            threadId: added.message.threadId!,
+            labelIds: added.message.labelIds || [],
+          });
+        }
+      }
+      for (const deleted of h.messagesDeleted || []) {
+        if (deleted.message) {
+          collected.messagesDeleted.push({
+            messageId: deleted.message.id!,
+            threadId: deleted.message.threadId!,
+          });
+        }
+      }
+      for (const added of h.labelsAdded || []) {
+        if (added.message) {
+          collected.labelsAdded.push({
+            messageId: added.message.id!,
+            threadId: added.message.threadId!,
+            labelIds: added.labelIds || [],
+          });
+        }
+      }
+      for (const removed of h.labelsRemoved || []) {
+        if (removed.message) {
+          collected.labelsRemoved.push({
+            messageId: removed.message.id!,
+            threadId: removed.message.threadId!,
+            labelIds: removed.labelIds || [],
+          });
+        }
+      }
+    }
+
+    pageToken = res.data.nextPageToken || undefined;
+  } while (pageToken);
+
+  return { history: collected, historyId: newHistoryId };
+}
+
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

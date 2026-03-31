@@ -3,9 +3,11 @@
 import { useState, useMemo } from "react";
 import { ThreadList } from "@/components/inbox/thread-list";
 import { useThreads } from "@/hooks/use-threads";
+import { useSyncOnMount } from "@/hooks/use-sync";
 
 export default function InboxPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const sync = useSyncOnMount();
 
   const { data, isLoading, fetchNextPage, hasNextPage, refetch } = useThreads({
     query: searchQuery || undefined,
@@ -24,7 +26,7 @@ export default function InboxPage() {
       hasMore={!!hasNextPage}
       onLoadMore={() => fetchNextPage()}
       onSearch={setSearchQuery}
-      onRefresh={() => refetch()}
+      onRefresh={() => sync.mutate({})}
       basePath="/inbox"
     />
   );

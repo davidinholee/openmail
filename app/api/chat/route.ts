@@ -59,14 +59,14 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log("[chat] Calling OpenAI with model gpt-4.1, isDrafting:", isDrafting);
+    console.log("[chat] Calling OpenAI with model gpt-5.1, isDrafting:", isDrafting);
     console.log("[chat] User message:", lastUserMessage.slice(0, 200));
 
     let stepCount = 0;
     let totalTokens = 0;
 
     const result = streamText({
-      model: openai("gpt-4.1"),
+      model: openai("gpt-5.1"),
       system: systemPrompt,
       messages,
       tools,
