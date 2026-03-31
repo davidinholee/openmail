@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmailActions } from "./email-actions";
 import { MessageCard } from "./message-card";
+import { Mail } from "lucide-react";
 import type { EmailThread } from "@/types/email";
 
 interface ThreadDetailProps {
@@ -28,12 +29,12 @@ export function ThreadDetail({
   if (isLoading) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-border px-6 py-3">
-          <Skeleton className="h-5 w-48" />
+        <div className="border-b border-border px-8 py-5">
+          <Skeleton className="h-6 w-64" />
         </div>
-        <div className="flex-1 p-6 space-y-4">
-          <Skeleton className="h-40 w-full rounded-lg" />
-          <Skeleton className="h-40 w-full rounded-lg" />
+        <div className="flex-1 px-8 py-6 space-y-6">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
       </div>
     );
@@ -41,16 +42,17 @@ export function ThreadDetail({
 
   if (!thread) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <p className="text-sm">Select a thread to read</p>
+      <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+        <Mail className="h-8 w-8 mb-3 opacity-20" />
+        <p className="text-sm font-medium text-muted-foreground">Select a conversation</p>
       </div>
     );
   }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-border px-6 py-3">
-        <h1 className="text-lg font-semibold truncate pr-4">
+      <div className="flex items-center justify-between border-b border-border px-8 py-4">
+        <h1 className="text-lg font-semibold truncate pr-6">
           {thread.subject}
         </h1>
         <EmailActions
@@ -65,7 +67,7 @@ export function ThreadDetail({
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-6 space-y-3">
+        <div className="max-w-3xl mx-auto px-8 py-2">
           {thread.messages.map((message, idx) => (
             <MessageCard
               key={message.id}

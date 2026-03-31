@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronDown, ChevronUp, Paperclip } from "lucide-react";
+import { ChevronDown, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 import type { ParsedEmail } from "@/types/email";
 
@@ -20,78 +19,59 @@ export function MessageCard({
 }: MessageCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded || isLast);
 
-  const initials =
-    message.from.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "?";
+  const initial = (message.from.name || message.from.email || "?")[0].toUpperCase();
 
   const formattedDate = message.date
     ? format(new Date(message.date), "MMM d, yyyy 'at' h:mm a")
     : "";
 
   return (
-    <div
-      className={cn(
-        "border border-border rounded-lg",
-        !expanded && "cursor-pointer hover:bg-accent/30"
-      )}
-    >
+    <div className={cn("group", !expanded && "cursor-pointer")}>
       <div
-        className="flex items-start gap-3 p-4"
+        className="flex items-start gap-4 py-5"
         onClick={() => !expanded && setExpanded(true)}
       >
-        <Avatar className="h-9 w-9 shrink-0 mt-0.5">
-          <AvatarFallback className="text-xs font-medium">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium mt-0.5">
+          {initial}
+        </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm font-semibold truncate">
+              <span className="text-[13px] font-semibold">
                 {message.from.name || message.from.email}
               </span>
               {!expanded && (
-                <span className="text-xs text-muted-foreground truncate">
+                <span className="text-[12px] text-muted-foreground truncate">
                   — {message.snippet}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[11px] text-muted-foreground">
                 {formattedDate}
               </span>
-              {expanded && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpanded(false);
-                  }}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </button>
-              )}
-              {!expanded && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              <ChevronDown
+                className={cn(
+                  "h-3.5 w-3.5 text-muted-foreground/50 transition-transform duration-200",
+                  expanded && "rotate-180"
+                )}
+              />
             </div>
           </div>
 
           {expanded && (
             <>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 To: {message.to.map((a) => a.name || a.email).join(", ")}
                 {message.cc.length > 0 &&
-                  ` | Cc: ${message.cc.map((a) => a.name || a.email).join(", ")}`}
+                  ` · Cc: ${message.cc.map((a) => a.name || a.email).join(", ")}`}
               </p>
 
-              <div className="mt-4 text-sm leading-relaxed">
+              <div className="mt-5 text-[13.5px] leading-[1.7] text-foreground/90">
                 {message.bodyHtml ? (
                   <div
-                    className="prose prose-sm dark:prose-invert max-w-none [&_img]:max-w-full"
+                    className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-[1.7] prose-p:text-[13.5px] [&_img]:max-w-full"
                     dangerouslySetInnerHTML={{ __html: message.bodyHtml }}
                   />
                 ) : (
@@ -102,14 +82,14 @@ export function MessageCard({
               </div>
 
               {message.attachments.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-5 flex flex-wrap gap-2">
                   {message.attachments.map((att) => (
                     <div
                       key={att.attachmentId}
-                      className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs"
+                      className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      <Paperclip className="h-3 w-3 text-muted-foreground" />
-                      <span className="truncate max-w-[200px]">
+                      <Paperclip className="h-3 w-3" />
+                      <span className="truncate max-w-[180px]">
                         {att.filename}
                       </span>
                     </div>
@@ -120,6 +100,8 @@ export function MessageCard({
           )}
         </div>
       </div>
+
+      {!isLast && <div className="ml-[52px] border-b border-border/50" />}
     </div>
   );
 }

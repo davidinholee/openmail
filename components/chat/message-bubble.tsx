@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bot, User } from "lucide-react";
 import { EmailCitation } from "./email-citation";
 import { DraftPreview } from "./draft-preview";
 import type { Citation, EmailDraft } from "@/types/email";
@@ -55,61 +54,56 @@ export function MessageBubble({
   const draft = existingDraft || parsedDraft;
 
   return (
-    <div
-      className={cn("flex gap-3 py-4", isUser ? "flex-row-reverse" : "flex-row")}
-    >
-      <Avatar className="h-7 w-7 shrink-0 mt-1">
+    <div className={cn("py-5", !isUser && "")}>
+      <div className={cn("flex gap-4", isUser ? "flex-row-reverse" : "flex-row")}>
         {isUser ? (
-          <>
+          <Avatar className="h-7 w-7 shrink-0 mt-0.5">
             <AvatarImage src={userImage} />
-            <AvatarFallback>
-              <User className="h-4 w-4" />
+            <AvatarFallback className="text-[10px] font-medium bg-foreground text-background">
+              Y
             </AvatarFallback>
-          </>
+          </Avatar>
         ) : (
-          <AvatarFallback className="bg-primary text-primary-foreground">
-            <Bot className="h-4 w-4" />
-          </AvatarFallback>
-        )}
-      </Avatar>
-
-      <div
-        className={cn(
-          "flex-1 space-y-3 min-w-0",
-          isUser ? "text-right" : "text-left"
-        )}
-      >
-        <div
-          className={cn(
-            "inline-block rounded-2xl px-4 py-2.5 text-sm leading-relaxed max-w-[85%]",
-            isUser
-              ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-muted rounded-tl-sm"
-          )}
-        >
-          <div className="whitespace-pre-wrap text-left">{text}</div>
-        </div>
-
-        {draft && (
-          <div className="max-w-[85%]">
-            <DraftPreview
-              draft={draft}
-              onSave={() => onSaveDraft?.(draft)}
-            />
+          <div className="h-7 w-7 shrink-0 mt-0.5 rounded-full bg-foreground flex items-center justify-center">
+            <span className="text-[11px] font-bold text-background">O</span>
           </div>
         )}
 
-        {citations && citations.length > 0 && (
-          <div className="space-y-2 max-w-[85%]">
-            {citations.map((citation) => (
-              <EmailCitation
-                key={citation.messageId}
-                citation={citation}
-                onClick={() => onCitationClick?.(citation)}
+        <div className={cn("flex-1 min-w-0 space-y-4", isUser && "text-right")}>
+          <div
+            className={cn(
+              "inline-block text-[13.5px] leading-[1.7]",
+              isUser
+                ? "bg-foreground text-background rounded-2xl rounded-tr-md px-4 py-3 max-w-[80%]"
+                : "text-foreground max-w-full"
+            )}
+          >
+            <div className={cn("whitespace-pre-wrap", isUser ? "text-left" : "text-left")}>
+              {text}
+            </div>
+          </div>
+
+          {draft && (
+            <div className="max-w-full">
+              <DraftPreview
+                draft={draft}
+                onSave={() => onSaveDraft?.(draft)}
               />
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+
+          {citations && citations.length > 0 && (
+            <div className="space-y-2">
+              {citations.map((citation) => (
+                <EmailCitation
+                  key={citation.messageId}
+                  citation={citation}
+                  onClick={() => onCitationClick?.(citation)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

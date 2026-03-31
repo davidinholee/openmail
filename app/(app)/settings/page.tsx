@@ -30,38 +30,45 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-8 space-y-8">
+    <div className="max-w-xl mx-auto px-8 py-12 space-y-10">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your OpenMail preferences
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+          Manage your OpenMail preferences.
         </p>
       </div>
 
-      <div className="space-y-4 rounded-lg border border-border p-6">
+      <div className="space-y-5">
         <div>
-          <h2 className="text-lg font-semibold">Email Index</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Index your recent emails to improve AI search quality. This
-            generates one-line summaries of your emails and caches them for
-            faster, more accurate search results.
+          <h2 className="text-[13px] font-medium uppercase tracking-widest text-muted-foreground">
+            Email Index
+          </h2>
+          <p className="text-sm text-muted-foreground/70 mt-2 leading-relaxed">
+            Generate one-line AI summaries of your recent emails to improve
+            search quality and speed. This is a one-time operation for each
+            email.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button onClick={handleSync} disabled={syncing}>
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={handleSync}
+            disabled={syncing}
+            variant="outline"
+            className="rounded-xl h-10 text-[13px]"
+          >
             {syncing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
             )}
             {syncing ? "Indexing..." : "Sync & Index Recent Emails"}
           </Button>
         </div>
 
         {syncResult && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CheckCircle className="h-4 w-4 text-green-500" />
+          <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+            <CheckCircle className="h-3.5 w-3.5 text-green-600" />
             {syncResult}
           </div>
         )}

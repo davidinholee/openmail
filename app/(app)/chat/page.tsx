@@ -63,7 +63,7 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
       setStreamingContent("");
-      setThinkingStatus("Thinking...");
+      setThinkingStatus("Searching your emails...");
 
       try {
         const response = await fetch("/api/chat", {
@@ -94,8 +94,6 @@ export default function ChatPage() {
           const lines = chunk.split("\n");
 
           for (const line of lines) {
-            if (!line.startsWith("data: ") && !line.startsWith("0:")) continue;
-
             if (line.startsWith("0:")) {
               const text = line.slice(2);
               try {
@@ -141,20 +139,6 @@ export default function ChatPage() {
     [activeConversationId, messages, createConversation]
   );
 
-  const handleSaveDraft = useCallback(
-    (draft: EmailDraft) => {
-      saveDraft.mutate(draft);
-    },
-    [saveDraft]
-  );
-
-  const handleCitationClick = useCallback(
-    (citation: Citation) => {
-      router.push(`/inbox/${citation.threadId}`);
-    },
-    [router]
-  );
-
   return (
     <div className="flex h-full">
       <ChatSidebar
@@ -172,8 +156,11 @@ export default function ChatPage() {
           isLoading={isLoading}
           thinkingStatus={thinkingStatus}
           userImage={session?.user?.image || undefined}
-          onSaveDraft={handleSaveDraft}
-          onCitationClick={handleCitationClick}
+          onSaveDraft={(draft: EmailDraft) => saveDraft.mutate(draft)}
+          onCitationClick={(citation: Citation) =>
+            router.push(`/inbox/${citation.threadId}`)
+          }
+          onSuggestionClick={handleSend}
         />
         <ChatInput onSend={handleSend} disabled={isLoading} />
       </div>

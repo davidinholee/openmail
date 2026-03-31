@@ -4,7 +4,6 @@ import { useRef, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "./message-bubble";
 import { ThinkingIndicator } from "./thinking-indicator";
-import { MessageSquare } from "lucide-react";
 import type { ChatMessage } from "@/types/chat";
 import type { Citation, EmailDraft } from "@/types/email";
 
@@ -16,6 +15,7 @@ interface ChatThreadProps {
   userImage?: string;
   onSaveDraft?: (draft: EmailDraft) => void;
   onCitationClick?: (citation: Citation) => void;
+  onSuggestionClick?: (text: string) => void;
 }
 
 export function ChatThread({
@@ -26,6 +26,7 @@ export function ChatThread({
   userImage,
   onSaveDraft,
   onCitationClick,
+  onSuggestionClick,
 }: ChatThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -35,31 +36,34 @@ export function ChatThread({
 
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground px-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
-          <MessageSquare className="h-8 w-8 text-primary" />
-        </div>
-        <h2 className="text-xl font-semibold text-foreground mb-2">
-          How can I help?
-        </h2>
-        <p className="text-sm text-center max-w-md">
-          Search your emails using natural language or ask me to draft an email
-          for you.
-        </p>
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
-          {[
-            "What emails did I get from my team this week?",
-            "Draft a follow-up email to Sarah about the project",
-            "Find emails with attachments from last month",
-            "Summarize my unread emails",
-          ].map((suggestion) => (
-            <button
-              key={suggestion}
-              className="rounded-lg border border-border px-3 py-2 text-left text-xs hover:bg-accent/50 transition-colors"
-            >
-              {suggestion}
-            </button>
-          ))}
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
+        <div className="max-w-lg w-full text-center space-y-8">
+          <div className="space-y-3">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              What can I find?
+            </h1>
+            <p className="text-[13px] text-muted-foreground leading-relaxed max-w-sm mx-auto">
+              Search your inbox with natural language or ask me to draft
+              something for you.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 max-w-md mx-auto">
+            {[
+              "Emails from my team this week",
+              "Draft a follow-up to Sarah",
+              "Attachments from last month",
+              "Summarize my unread emails",
+            ].map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => onSuggestionClick?.(suggestion)}
+                className="rounded-xl border border-border px-4 py-3 text-left text-[12px] leading-relaxed text-muted-foreground hover:text-foreground hover:border-foreground/20 hover:bg-secondary/50 transition-all duration-200"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -67,7 +71,7 @@ export function ChatThread({
 
   return (
     <ScrollArea className="flex-1">
-      <div className="max-w-3xl mx-auto px-4 pb-4">
+      <div className="max-w-2xl mx-auto px-6 pb-6 pt-4">
         {messages.map((msg) => (
           <MessageBubble
             key={msg.id}

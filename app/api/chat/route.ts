@@ -1,5 +1,5 @@
 import { streamText, stepCountIs } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { messages as messagesTable, conversations } from "@/lib/db/schema";
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   }
 
   const result = streamText({
-    model: anthropic("claude-sonnet-4-20250514"),
+    model: openai("gpt-4.1"),
     system: systemPrompt,
     messages,
     tools,

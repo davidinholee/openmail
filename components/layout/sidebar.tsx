@@ -8,10 +8,9 @@ import {
   Inbox,
   Star,
   Settings,
-  PanelLeftClose,
-  PanelLeft,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 
 const navItems = [
@@ -32,31 +31,32 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full flex-col border-r border-border bg-card transition-all duration-200",
-        collapsed ? "w-16" : "w-60"
+        "flex h-full flex-col bg-card border-r border-border transition-all duration-300 ease-in-out",
+        collapsed ? "w-[60px]" : "w-[220px]"
       )}
     >
-      <div className="flex h-14 items-center justify-between border-b border-border px-3">
+      <div className="flex h-16 items-center justify-between px-4">
         {!collapsed && (
-          <span className="text-lg font-semibold tracking-tight">
+          <span className="text-[15px] font-semibold tracking-tight">
             OpenMail
           </span>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={onToggle}
-          className="h-8 w-8 shrink-0"
+          className={cn(
+            "text-muted-foreground hover:text-foreground transition-colors p-1",
+            collapsed && "mx-auto"
+          )}
         >
           {collapsed ? (
-            <PanelLeft className="h-4 w-4" />
+            <ChevronsRight className="h-4 w-4" />
           ) : (
-            <PanelLeftClose className="h-4 w-4" />
+            <ChevronsLeft className="h-4 w-4" />
           )}
-        </Button>
+        </button>
       </div>
 
-      <nav className="flex-1 space-y-1 p-2">
+      <nav className="flex-1 px-2 py-4 space-y-0.5">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
@@ -65,20 +65,20 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] tracking-wide transition-all duration-150",
                 isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                  ? "bg-foreground text-background font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               )}
             >
-              <item.icon className="h-4 w-4 shrink-0" />
+              <item.icon className={cn("h-[15px] w-[15px] shrink-0", collapsed && "mx-auto")} />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-border p-2">
+      <div className="px-2 pb-4">
         <UserMenu collapsed={collapsed} />
       </div>
     </aside>

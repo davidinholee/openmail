@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
 import { db } from "@/lib/db";
 import { emailSummaries } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -69,7 +69,7 @@ async function generateEmailSummary(
   const truncatedContent = content.slice(0, 2000);
 
   const { text } = await generateText({
-    model: anthropic("claude-3-5-haiku-latest"),
+    model: openai("gpt-4.1-mini"),
     system:
       "Summarize this email in one concise sentence (max 30 words). Focus on the key action, request, or information. Do not include greetings or sign-offs in your summary.",
     prompt: `From: ${sender}\nSubject: ${subject}\n\n${truncatedContent}`,

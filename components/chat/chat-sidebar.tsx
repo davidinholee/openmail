@@ -1,10 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Conversation } from "@/types/chat";
 
 interface ChatSidebarProps {
@@ -23,38 +22,45 @@ export function ChatSidebar({
   onDelete,
 }: ChatSidebarProps) {
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border p-3">
-        <span className="text-sm font-semibold">Conversations</span>
-        <Button variant="ghost" size="icon" onClick={onNew} className="h-7 w-7">
+    <div className="flex h-full w-56 flex-col border-r border-border bg-card">
+      <div className="flex items-center justify-between px-4 py-4">
+        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+          History
+        </span>
+        <button
+          onClick={onNew}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
           <Plus className="h-4 w-4" />
-        </Button>
+        </button>
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-0.5">
+        <div className="px-2 pb-4 space-y-0.5">
           {conversations.length === 0 ? (
-            <p className="px-3 py-6 text-center text-xs text-muted-foreground">
-              No conversations yet
+            <p className="px-3 py-8 text-center text-[11px] text-muted-foreground/50 italic">
+              No conversations
             </p>
           ) : (
             conversations.map((conv) => (
               <div
                 key={conv.id}
                 className={cn(
-                  "group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors",
+                  "group flex items-center gap-2 rounded-lg px-3 py-2.5 cursor-pointer transition-all duration-150",
                   activeId === conv.id
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent/50 text-muted-foreground"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                 )}
                 onClick={() => onSelect(conv.id)}
               >
-                <MessageSquare className="h-4 w-4 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm">
+                  <p className="truncate text-[12px]">
                     {conv.title || "New conversation"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className={cn(
+                    "text-[10px] mt-0.5",
+                    activeId === conv.id ? "text-background/50" : "text-muted-foreground/50"
+                  )}>
                     {formatDistanceToNow(new Date(conv.createdAt), {
                       addSuffix: true,
                     })}
@@ -65,9 +71,12 @@ export function ChatSidebar({
                     e.stopPropagation();
                     onDelete(conv.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  className={cn(
+                    "opacity-0 group-hover:opacity-100 transition-opacity shrink-0",
+                    activeId === conv.id ? "text-background/50 hover:text-background" : ""
+                  )}
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                  <Trash2 className="h-3 w-3" />
                 </button>
               </div>
             ))

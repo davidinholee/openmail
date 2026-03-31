@@ -42,41 +42,41 @@ export function ThreadList({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+      <div className="flex items-center gap-3 border-b border-border px-5 py-3">
         <div className="flex-1">
           <SearchBar onSearch={onSearch} />
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={handleRefresh}
-          className="h-9 w-9 shrink-0"
+          className="text-muted-foreground hover:text-foreground transition-colors p-1"
         >
           <RefreshCw
             className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
           />
-        </Button>
+        </button>
       </div>
 
       <ScrollArea className="flex-1">
         {isLoading && threads.length === 0 ? (
-          <div className="space-y-1 p-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex items-start gap-3 px-4 py-3">
+          <div className="p-5 space-y-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-4">
                 <Skeleton className="h-9 w-9 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3.5 w-1/2" />
-                  <Skeleton className="h-3 w-full" />
+                <div className="flex-1 space-y-2.5">
+                  <Skeleton className="h-3.5 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-2.5 w-full" />
                 </div>
               </div>
             ))}
           </div>
         ) : threads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Inbox className="h-12 w-12 mb-3 opacity-50" />
-            <p className="text-sm font-medium">No emails found</p>
-            <p className="text-xs mt-1">Try a different search or check back later</p>
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+            <Inbox className="h-8 w-8 mb-4 opacity-30" />
+            <p className="text-sm font-medium">Nothing here</p>
+            <p className="text-xs mt-1.5 text-muted-foreground/60">
+              Try a different search or check back later
+            </p>
           </div>
         ) : (
           <div>
@@ -89,8 +89,13 @@ export function ThreadList({
               />
             ))}
             {hasMore && (
-              <div className="p-4 text-center">
-                <Button variant="ghost" size="sm" onClick={onLoadMore}>
+              <div className="p-6 text-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLoadMore}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
                   Load more
                 </Button>
               </div>
