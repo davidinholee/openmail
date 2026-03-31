@@ -1,7 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { searchMessages, getMessage, createDraft, getMailboxInfo } from "@/lib/gmail";
-import { getOrCreateSummary } from "./summarizer";
+import { db } from "@/lib/db";
+import { cachedThreads } from "@/lib/db/schema";
+import { eq, and, or, ilike, desc } from "drizzle-orm";
 
 export function createSearchTools(accessToken: string, userId: string) {
   return {
@@ -28,7 +30,7 @@ export function createSearchTools(accessToken: string, userId: string) {
         "Supports operators: from:, to:, subject:, before:YYYY/MM/DD, after:YYYY/MM/DD, " +
         "has:attachment, is:unread, is:starred, label:, newer_than:Xd, older_than:Xd, " +
         "filename:, cc:, bcc:, in:anywhere. " +
-        "Returns email metadata with AI-generated summaries, the total estimated result count, " +
+        "Returns email metadata with summaries, the total estimated result count, " +
         "and a nextPageToken if more results are available. " +
         "Use pageToken to fetch additional pages of results.",
       inputSchema: z.object({
@@ -46,43 +48,59 @@ export function createSearchTools(accessToken: string, userId: string) {
           .describe("Page token from a previous search to fetch more results"),
       }),
       execute: async ({ query, maxResults, pageToken }) => {
-        console.log("[search_emails] query:", query, "maxResults:", maxResults, "pageToken:", pageToken || "none");
-        const response = await searchMessages(accessToken, query, maxResults, pageToken);
-        console.log("[search_emails] got", response.results.length, "results, estimate:", response.resultSizeEstimate);
+        // For simple text queries without Gmail operators, search cache first
+        const hasGmailOperators = /\b(from|to|subject|before|after|has|is|label|newer_than|older_than|filename|cc|bcc|in):/.test(query);
 
-        const withSummaries = await Promise.all(
-          response.results.map(async (email) => {
-            let summary = email.snippet;
-            try {
-              summary = await getOrCreateSummary(userId, {
-                messageId: email.messageId,
-                threadId: email.threadId,
-                subject: email.subject,
-                sender: email.sender,
-                date: email.date,
-                snippet: email.snippet,
-                labelIds: email.labelIds,
-              });
-            } catch (err) {
-              console.error("[search_emails] Summary failed for", email.messageId, err);
-            }
+        if (!hasGmailOperators && !pageToken) {
+          const cached = await db
+            .select()
+            .from(cachedThreads)
+            .where(
+              and(
+                eq(cachedThreads.userId, userId),
+                or(
+                  ilike(cachedThreads.subject, `%${query}%`),
+                  ilike(cachedThreads.snippet, `%${query}%`),
+                  ilike(cachedThreads.fromName, `%${query}%`),
+                  ilike(cachedThreads.fromEmail, `%${query}%`)
+                )
+              )
+            )
+            .orderBy(desc(cachedThreads.lastMessageDate))
+            .limit(maxResults);
 
+          if (cached.length > 0) {
             return {
-              messageId: email.messageId,
-              threadId: email.threadId,
-              subject: email.subject,
-              sender: email.sender,
-              date: email.date,
-              summary,
+              emails: cached.map((row) => ({
+                messageId: row.threadId, // thread-level result
+                threadId: row.threadId,
+                subject: row.subject || "(no subject)",
+                sender: `${row.fromName || "Unknown"} <${row.fromEmail || ""}>`,
+                date: row.lastMessageDate?.toISOString() || "",
+                summary: row.summary || row.snippet || "",
+              })),
+              resultSizeEstimate: cached.length,
+              nextPageToken: null,
+              returnedCount: cached.length,
             };
-          })
-        );
+          }
+        }
+
+        // Fall back to live Gmail search
+        const response = await searchMessages(accessToken, query, maxResults, pageToken);
 
         return {
-          emails: withSummaries,
+          emails: response.results.map((email) => ({
+            messageId: email.messageId,
+            threadId: email.threadId,
+            subject: email.subject,
+            sender: email.sender,
+            date: email.date,
+            summary: email.snippet,
+          })),
           resultSizeEstimate: response.resultSizeEstimate,
           nextPageToken: response.nextPageToken || null,
-          returnedCount: withSummaries.length,
+          returnedCount: response.results.length,
         };
       },
     }),

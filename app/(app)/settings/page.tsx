@@ -17,7 +17,7 @@ export default function SettingsPage() {
       const data = await res.json();
       if (res.ok) {
         setSyncResult(
-          `Indexed ${data.processed} emails. ${data.skipped} already cached.`
+          `Synced ${data.threadsUpdated} threads. ${data.threadsRemoved} removed. (${data.type} sync)`
         );
       } else {
         setSyncResult(`Error: ${data.error}`);

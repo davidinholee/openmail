@@ -1,30 +1,22 @@
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { db } from "@/lib/db";
-import { emailSummaries } from "@/lib/db/schema";
+import { cachedThreads } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function getOrCreateSummary(
   userId: string,
-  email: {
-    messageId: string;
-    threadId: string;
-    subject: string;
-    sender: string;
-    date: string;
-    snippet: string;
-    body?: string;
-    labelIds?: string[];
-    hasAttachments?: boolean;
-  }
+  threadId: string,
+  content: { subject: string; sender: string; body: string }
 ): Promise<string> {
+  // Check if summary already exists in cache
   const existing = await db
-    .select()
-    .from(emailSummaries)
+    .select({ summary: cachedThreads.summary })
+    .from(cachedThreads)
     .where(
       and(
-        eq(emailSummaries.userId, userId),
-        eq(emailSummaries.messageId, email.messageId)
+        eq(cachedThreads.userId, userId),
+        eq(cachedThreads.threadId, threadId)
       )
     )
     .limit(1);
@@ -33,30 +25,23 @@ export async function getOrCreateSummary(
     return existing[0].summary;
   }
 
-  const contentForSummary = email.body || email.snippet;
+  // Generate summary
   const summary = await generateEmailSummary(
-    email.subject,
-    email.sender,
-    contentForSummary
+    content.subject,
+    content.sender,
+    content.body
   );
 
+  // Store in cache
   await db
-    .insert(emailSummaries)
-    .values({
-      userId,
-      messageId: email.messageId,
-      threadId: email.threadId,
-      subject: email.subject,
-      sender: email.sender,
-      date: email.date ? new Date(email.date) : new Date(),
-      summary,
-      labels: email.labelIds || [],
-      hasAttachments: email.hasAttachments || false,
-    })
-    .onConflictDoUpdate({
-      target: [emailSummaries.userId, emailSummaries.messageId],
-      set: { summary },
-    });
+    .update(cachedThreads)
+    .set({ summary })
+    .where(
+      and(
+        eq(cachedThreads.userId, userId),
+        eq(cachedThreads.threadId, threadId)
+      )
+    );
 
   return summary;
 }
@@ -69,7 +54,7 @@ async function generateEmailSummary(
   const truncatedContent = content.slice(0, 2000);
 
   const { text } = await generateText({
-    model: openai("gpt-4.1-mini"),
+    model: openai("gpt-5.1-mini"),
     system:
       "Summarize this email in one concise sentence (max 30 words). Focus on the key action, request, or information. Do not include greetings or sign-offs in your summary.",
     prompt: `From: ${sender}\nSubject: ${subject}\n\n${truncatedContent}`,
@@ -77,34 +62,4 @@ async function generateEmailSummary(
   });
 
   return text.trim();
-}
-
-export async function batchSummarize(
-  userId: string,
-  emails: {
-    messageId: string;
-    threadId: string;
-    subject: string;
-    sender: string;
-    date: string;
-    snippet: string;
-    body?: string;
-    labelIds?: string[];
-    hasAttachments?: boolean;
-  }[]
-): Promise<Map<string, string>> {
-  const results = new Map<string, string>();
-  const batchSize = 5;
-
-  for (let i = 0; i < emails.length; i += batchSize) {
-    const batch = emails.slice(i, i + batchSize);
-    const summaries = await Promise.all(
-      batch.map((email) => getOrCreateSummary(userId, email))
-    );
-    batch.forEach((email, idx) => {
-      results.set(email.messageId, summaries[idx]);
-    });
-  }
-
-  return results;
 }

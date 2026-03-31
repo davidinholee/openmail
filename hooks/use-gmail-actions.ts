@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ModifyOptions {
   messageId: string;
+  threadId: string;
   addLabelIds?: string[];
   removeLabelIds?: string[];
 }

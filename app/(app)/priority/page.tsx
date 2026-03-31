@@ -9,8 +9,8 @@ export default function PriorityPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isLoading, fetchNextPage, hasNextPage, refetch } = useThreads({
-    query: searchQuery ? `is:important ${searchQuery}` : "is:important",
-    labelIds: ["INBOX"],
+    query: searchQuery || undefined,
+    priority: true,
   });
 
   const threads = useMemo(

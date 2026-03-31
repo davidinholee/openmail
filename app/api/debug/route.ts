@@ -34,7 +34,7 @@ export async function GET() {
   if (checks.openaiKey.ok) {
     try {
       const { text } = await generateText({
-        model: openai("gpt-4.1-mini"),
+        model: openai("gpt-5.1-mini"),
         prompt: "Say 'ok' and nothing else.",
         maxOutputTokens: 5,
       });

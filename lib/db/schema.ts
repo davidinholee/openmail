@@ -8,6 +8,7 @@ import {
   uuid,
   jsonb,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 
 // ─── NextAuth Tables ─────────────────────────────────────────────────────────
@@ -90,25 +91,53 @@ export const messages = pgTable("message", {
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 
-export const emailSummaries = pgTable(
-  "email_summary",
+// ─── Sync & Cache Tables ────────────────────────────────────────────────────
+
+export const syncState = pgTable("sync_state", {
+  userId: text("userId")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  historyId: text("historyId"),
+  fullSyncCursor: text("fullSyncCursor"),
+  fullSyncStartedAt: timestamp("fullSyncStartedAt", { mode: "date" }),
+  lastFullSyncAt: timestamp("lastFullSyncAt", { mode: "date" }),
+  lastIncrementalSyncAt: timestamp("lastIncrementalSyncAt", { mode: "date" }),
+  syncStatus: text("syncStatus", { enum: ["idle", "syncing", "error"] })
+    .notNull()
+    .default("idle"),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+export const cachedThreads = pgTable(
+  "cached_thread",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    messageId: text("messageId").notNull(),
-    threadId: text("threadId"),
+    threadId: text("threadId").notNull(),
+    historyId: text("historyId"),
     subject: text("subject"),
-    sender: text("sender"),
-    recipients: text("recipients"),
-    date: timestamp("date", { mode: "date" }),
-    summary: text("summary"),
-    labels: text("labels").array(),
+    snippet: text("snippet"),
+    fromName: text("fromName"),
+    fromEmail: text("fromEmail"),
+    lastMessageDate: timestamp("lastMessageDate", { mode: "date" }),
+    messageCount: integer("messageCount").default(1),
+    isUnread: boolean("isUnread").default(false),
+    isStarred: boolean("isStarred").default(false),
+    labelIds: text("labelIds").array(),
     hasAttachments: boolean("hasAttachments").default(false),
+    isPriority: boolean("isPriority").default(false),
+    summary: text("summary"),
     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("email_summary_user_message_idx").on(table.userId, table.messageId),
+    uniqueIndex("cached_thread_user_thread_idx").on(
+      table.userId,
+      table.threadId
+    ),
+    index("cached_thread_user_date_idx").on(table.userId, table.lastMessageDate),
+    index("cached_thread_user_priority_idx").on(table.userId, table.isPriority),
   ]
 );
