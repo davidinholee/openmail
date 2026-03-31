@@ -72,27 +72,30 @@ export async function POST(req: Request) {
       tools,
       stopWhen: stepCountIs(12),
       onChunk: ({ chunk }) => {
-        if (chunk.type === "text-delta" && chunk.textDelta) {
-          process.stdout.write(chunk.textDelta);
+        if (chunk.type === "text-delta" && chunk.text) {
+          process.stdout.write(chunk.text);
         }
       },
       onError: ({ error }) => {
         console.error("[chat] Stream error:", error);
       },
-      onStepFinish: ({ stepType, finishReason, text, toolCalls, toolResults, usage }) => {
+      onStepFinish: (event) => {
         stepCount++;
-        const stepTokens = usage?.totalTokens || 0;
+        const e = event as Record<string, unknown>;
+        const stepTokens = (e.usage as { totalTokens?: number })?.totalTokens || 0;
         totalTokens += stepTokens;
 
         console.log("\n[chat] ─── Step", stepCount, "───");
-        console.log("[chat]   type:", stepType, "| finishReason:", finishReason, "| tokens:", stepTokens);
+        console.log("[chat]   finishReason:", e.finishReason, "| tokens:", stepTokens);
 
+        const toolCalls = e.toolCalls as { toolName: string; args: unknown }[] | undefined;
         if (toolCalls && toolCalls.length > 0) {
           for (const tc of toolCalls) {
             console.log("[chat]   tool call:", tc.toolName, JSON.stringify(tc.args).slice(0, 300));
           }
         }
 
+        const toolResults = e.toolResults as { toolName: string; result: unknown }[] | undefined;
         if (toolResults && toolResults.length > 0) {
           for (const tr of toolResults) {
             const resultStr = JSON.stringify(tr.result);
@@ -103,6 +106,7 @@ export async function POST(req: Request) {
           }
         }
 
+        const text = e.text as string | undefined;
         if (text) {
           console.log("[chat]   text:", text.slice(0, 200) + (text.length > 200 ? "..." : ""));
         }
