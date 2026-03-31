@@ -20,6 +20,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Pre-commit Hook
+
+This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/lint-staged/lint-staged) to automatically lint staged files before each commit.
+
+After cloning and running `npm install`, the hook is set up automatically via the `prepare` script. On every commit, ESLint runs (with autofix) on staged `.ts` and `.tsx` files. If there are lint errors that can't be auto-fixed, the commit will be blocked until you resolve them.
+
+To skip the hook in exceptional cases:
+
+```bash
+git commit --no-verify -m "your message"
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
