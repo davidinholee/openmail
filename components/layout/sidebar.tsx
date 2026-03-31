@@ -15,8 +15,8 @@ import { UserMenu } from "./user-menu";
 
 const navItems = [
   { href: "/chat", label: "Chat", icon: MessageSquare },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/priority", label: "Priority", icon: Star },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

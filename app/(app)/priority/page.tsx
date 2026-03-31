@@ -26,7 +26,7 @@ export default function PriorityPage() {
           Smart AI ranking coming soon
         </span>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         <ThreadList
           threads={threads}
           isLoading={isLoading}

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SearchBar } from "./search-bar";
 import { ThreadListItem } from "./thread-list-item";
@@ -56,7 +55,7 @@ export function ThreadList({
         </button>
       </div>
 
-      <ScrollArea className="flex-1">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {isLoading && threads.length === 0 ? (
           <div className="p-5 space-y-6">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -102,7 +101,7 @@ export function ThreadList({
             )}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }

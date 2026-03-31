@@ -44,10 +44,10 @@ export function ThreadListItem({
       </div>
 
       <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-baseline gap-3">
           <span
             className={cn(
-              "truncate text-[13px]",
+              "truncate text-[13px] min-w-0 flex-1",
               thread.isUnread ? "font-semibold" : "font-normal"
             )}
           >
@@ -57,7 +57,7 @@ export function ThreadListItem({
             {thread.isStarred && (
               <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
             )}
-            <span className="text-[11px] text-muted-foreground tabular-nums">
+            <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
               {timeAgo}
             </span>
           </div>
